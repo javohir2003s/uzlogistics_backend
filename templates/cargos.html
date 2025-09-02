@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+<title>Faol yuklar — Real-time</title>
+<style>
+  :root{
+    --bg:#0c0f14; --panel:#111622; --card:#131a2a; --text:#eaf1ff; --muted:#91a0b9; --line:rgba(255,255,255,.06);
+    --accent:#6ea8ff; --ok:#36d39c; --warn:#f6b24d; --err:#ff5a6f; --chip:#182036; --shadow:0 14px 36px rgba(0,0,0,.38);
+    --r:18px;
+  }
+  [data-theme="light"]{
+    --bg:#f4f7ff; --panel:#ffffff; --card:#ffffff; --text:#0f172a; --muted:#64748b; --line:rgba(2,6,23,.08);
+    --accent:#3b82f6; --chip:#eef2ff; --shadow:0 20px 44px rgba(2,6,23,.10);
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{
+    margin:0; background:
+      radial-gradient(1200px 800px at 100% -10%, rgba(110,168,255,.18), transparent 60%),
+      radial-gradient(900px 600px at -20% 120%, rgba(79,70,229,.12), transparent 60%),
+      var(--bg);
+    color:var(--text); font:500 15px/1.45 ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+    -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale;
+  }
+
+  .wrap{max-width:1100px;margin:0 auto;padding:16px 14px 26px}
+  .top{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px}
+  .brand{display:flex;align-items:center;gap:10px}
+  .logo{width:36px;height:36px;border-radius:12px;background:
+    conic-gradient(from 220deg, #6ea8ff, #9b8cff, #6ea8ff);
+    filter:saturate(1.2); box-shadow:var(--shadow)}
+  .title{font-weight:900;letter-spacing:.25px}
+  .conn{display:flex;align-items:center;gap:8px;padding:8px 12px;border-radius:999px;background:rgba(17,22,34,.55);
+    backdrop-filter:blur(10px);border:1px solid var(--line)}
+  [data-theme="light"] .conn{background:rgba(255,255,255,.7)}
+  .dot{width:9px;height:9px;border-radius:50%}.ok{background:var(--ok)}.warn{background:var(--warn)}.err{background:var(--err)}
+
+  .panel{
+    position:sticky;top:8px;z-index:10;
+    display:flex;gap:10px;flex-wrap:wrap;align-items:center;
+    background:rgba(17,22,34,.55);backdrop-filter:blur(12px);
+    border:1px solid var(--line);border-radius:16px;padding:10px;box-shadow:var(--shadow)
+  }
+  [data-theme="light"] .panel{background:rgba(255,255,255,.75)}
+  .field{display:flex;align-items:center;gap:8px;padding:8px 10px;background:var(--panel);border:1px solid var(--line);border-radius:12px}
+  .field input,.field select{background:transparent;border:none;outline:0;color:var(--text);min-width:150px;font-size:14px}
+  .btn{border:none;border-radius:12px;padding:10px 12px;font-weight:800;cursor:pointer}
+  .btn.ghost{background:transparent;border:1px dashed var(--line);color:var(--text)}
+  .btn.ghost:hover{border-style:solid}
+
+  .grid{display:grid;gap:12px;margin-top:14px;grid-template-columns:repeat(auto-fill,minmax(280px,1fr))}
+  .card{
+    background:
+      linear-gradient(180deg, rgba(255,255,255,.02), transparent),
+      var(--card);
+    border:1px solid var(--line);border-radius:var(--r);padding:14px;box-shadow:var(--shadow);
+    transition:transform .22s ease, box-shadow .22s ease, border-color .22s ease
+  }
+  .card:hover{transform:translateY(-2px);box-shadow:0 18px 50px rgba(0,0,0,.45)}
+  .new{animation:pop .28s ease}
+  @keyframes pop{0%{transform:scale(.98)}100%{transform:scale(1)}}
+  .row{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:4px 0}
+  .route{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-weight:800}
+  .badge{padding:4px 8px;background:var(--chip);border-radius:999px;font-size:12px}
+  .muted{color:var(--muted)}
+  .desc{margin-top:8px}
+  .meta{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+  .chip{background:var(--chip);padding:6px 10px;border-radius:999px;font-size:12px;display:inline-flex;gap:6px;align-items:center}
+  .strong{font-weight:900}
+  .btns{display:flex;gap:8px;margin-top:12px}
+  .btn.pri{background:var(--accent);color:#fff}
+  .btn.out{background:transparent;border:1px solid var(--line);color:var(--text)}
+  .empty{text-align:center;padding:40px 10px;opacity:.8}
+
+  .skeleton{height:140px;border-radius:var(--r);border:1px solid var(--line);
+    background:linear-gradient(90deg, rgba(255,255,255,.05), rgba(255,255,255,.09), rgba(255,255,255,.05));
+    background-size:200% 100%;animation:sh 1.05s infinite linear}
+  @keyframes sh{0%{background-position:200% 0}100%{background-position:-200% 0}}
+
+  .toast{position:fixed;left:50%;transform:translateX(-50%);bottom:16px;background:var(--panel);border:1px solid var(--line);
+    padding:10px 14px;border-radius:12px;box-shadow:var(--shadow);opacity:0;pointer-events:none;transition:opacity .2s ease, transform .2s ease}
+  .toast.show{opacity:1;transform:translate(-50%,-6px)}
+  .arrow{width:18px;height:18px;display:inline-block;background:conic-gradient(from 90deg at 50% 50%, var(--accent), #22d3ee, var(--accent));
+    -webkit-mask:url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18"><path fill="%23000" d="M3 9h9l-3-3 1.4-1.4L16.8 11l-6.4 6.4L9 16l3-3H3z"/></svg>') center/contain no-repeat;mask:var(--m) center/contain no-repeat}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top">
+    <div class="brand"><div class="logo"></div><div class="title">Faol yuklar</div></div>
+    <div class="conn"><span id="dot" class="dot warn"></span><span id="cText">Ulanmoqda…</span></div>
+  </div>
+
+  <div class="panel">
+    <div class="field">🔎 <input id="q" placeholder="Qidirish: tavsif, tuman, viloyat…" /></div>
+    <div class="field">🧭
+      <select id="region">
+        <option value="">Viloyat (hammasi)</option>
+      </select>
+    </div>
+    <div class="field">⚖️
+      <select id="sort">
+        <option value="new">Yangi avval</option>
+        <option value="heavy">Og‘irligi (katta→kichik)</option>
+        <option value="light">Og‘irligi (kichik→katta)</option>
+      </select>
+    </div>
+    <button class="btn ghost" id="reset">♻️ Tozalash</button>
+  </div>
+
+  <div class="grid" id="grid">
+    <div class="skeleton"></div><div class="skeleton"></div><div class="skeleton"></div>
+  </div>
+
+  <div id="empty" class="empty" style="display:none">Hozircha faol yuk yo‘q.</div>
+</div>
+
+<div id="toast" class="toast">Yuklar yangilandi</div>
+
+<script>
+  // Telegram WebApp temasi va ranglari
+  (function(){
+    try{
+      if(window.Telegram && Telegram.WebApp){
+        Telegram.WebApp.ready(); Telegram.WebApp.expand();
+        const tp = Telegram.WebApp.themeParams||{}, scheme = Telegram.WebApp.colorScheme||'dark';
+        if(scheme==='light') document.documentElement.setAttribute('data-theme','light');
+        const m = {'--bg':tp.bg_color,'--panel':tp.secondary_bg_color,'--card':tp.section_bg_color,'--text':tp.text_color,'--muted':tp.hint_color,'--accent':tp.button_color};
+        for(const k in m){ if(m[k]) document.documentElement.style.setProperty(k,m[k]); }
+      }
+    }catch(e){}
+  })();
+
+  const $=s=>document.querySelector(s);
+  const grid=$("#grid"), empty=$("#empty"), toast=$("#toast");
+  const state={cargos:[], byId:new Map(), regionSet:new Set()};
+  const filters={q:'', region:'', sort:'new'};
+
+  function toastMsg(s){toast.textContent=s;toast.classList.add('show');setTimeout(()=>toast.classList.remove('show'),1200)}
+  function fmt(iso){try{const d=new Date(iso);return d.toLocaleString('uz-UZ',{year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'})}catch{return iso}}
+  function rel(iso){try{const d=new Date(iso);const sec=(Date.now()-d)/1e3;const f=n=>Math.round(n);
+    if(sec<60)return `${f(sec)} soniya oldin`; if(sec<3600)return `${f(sec/60)} daqiqa oldin`;
+    if(sec<86400)return `${f(sec/3600)} soat oldin`; return `${f(sec/86400)} kun oldin`
+  }catch{return ''}}
+
+  // === LAT/LON YO'Q VARIANT ===
+  function card(c){
+    const fr=c.from_location?.district?.region?.name||'—';
+    const fd=c.from_location?.district?.name||'—';
+    const tr=c.to_location?.district?.region?.name||'—';
+    const td=c.to_location?.district?.name||'—';
+    const w=c.weight_kgs ?? '—';
+    const desc=(c.description||'').trim()||'Tavsif yo‘q';
+    const created=c.created_at||c.date_available||'';
+
+    const el=document.createElement('div'); el.className='card'; el.dataset.id=c.id;
+    el.innerHTML=`
+      <div class="row">
+        <div class="route">
+          <span class="badge">Jo‘natish</span> ${fr}, ${fd}
+          <span class="arrow"></span>
+          <span class="badge">Borish</span> ${tr}, ${td}
+        </div>
+        <div class="muted">${rel(created)}</div>
+      </div>
+      <div class="desc">${desc}</div>
+      <div class="meta">
+        <span class="chip">⚖️ <span class="strong">${w}</span> kg</span>
+        <span class="chip">🗓️ ${fmt(created)}</span>
+        ${c.price_offer ? `<span class="chip">💸 ${Number(c.price_offer).toLocaleString('uz-UZ')} so‘m</span>` : ''}
+      </div>
+      <div class="btns">
+        <button class="btn pri" disabled>Band qilish (tez kunda)</button>
+      </div>`;
+    return el;
+  }
+
+  function fillRegionFilter(){
+    const sel=$("#region"); const cur=sel.value;
+    sel.innerHTML=`<option value="">Viloyat (hammasi)</option>` +
+      Array.from(state.regionSet).sort().map(r=>`<option value="${r}">${r}</option>`).join('');
+    if(cur && state.regionSet.has(cur)) sel.value=cur;
+  }
+
+  function applyFilters(list){
+    let out=list.slice();
+    if(filters.q){
+      const q=filters.q.toLowerCase();
+      out=out.filter(c=>{
+        const fR=c.from_location?.district?.region?.name||'', fD=c.from_location?.district?.name||'';
+        const tR=c.to_location?.district?.region?.name||'', tD=c.to_location?.district?.name||'';
+        const d=c.description||'';
+        return [fR,fD,tR,tD,d].some(x=>String(x).toLowerCase().includes(q));
+      });
+    }
+    if(filters.region){
+      out=out.filter(c=>{
+        const fR=c.from_location?.district?.region?.name, tR=c.to_location?.district?.region?.name;
+        return fR===filters.region || tR===filters.region;
+      });
+    }
+    switch(filters.sort){
+      case 'heavy': out.sort((a,b)=>(b.weight_kgs||0)-(a.weight_kgs||0)); break;
+      case 'light': out.sort((a,b)=>(a.weight_kgs||0)-(b.weight_kgs||0)); break;
+      default: out.sort((a,b)=>new Date(b.created_at||b.date_available||0)-new Date(a.created_at||a.date_available||0));
+    }
+    return out;
+  }
+
+  function render(list,{animate=true}={}){
+    grid.innerHTML='';
+    if(!list.length){ empty.style.display='block'; return } else empty.style.display='none';
+    const prev=new Set(state.cargos.map(x=>x.id));
+    list.forEach(c=>{
+      const el=card(c);
+      if(animate && !prev.has(c.id)) el.classList.add('new');
+      grid.appendChild(el);
+    });
+  }
+
+  function setData(cargos){
+    state.byId.clear(); state.regionSet.clear();
+    cargos.forEach(c=>{
+      state.byId.set(c.id,c);
+      const fR=c.from_location?.district?.region?.name, tR=c.to_location?.district?.region?.name;
+      if(fR) state.regionSet.add(fR); if(tR) state.regionSet.add(tR);
+    });
+    state.cargos=cargos;
+    fillRegionFilter();
+    render(applyFilters(state.cargos));
+  }
+
+  // WebSocket ulanish
+  const dot=$("#dot"), cText=$("#cText");
+  function conn(s){dot.className='dot '+s; cText.textContent=(s==='ok')?'Ulandi':(s==='warn')?'Ulanmoqda…':'Aloqa uzildi'}
+  let ws=null, timer=null;
+
+  function handleSnapshot(cargos){
+    const before=applyFilters(state.cargos).length;
+    setData(Array.isArray(cargos)?cargos:[]);
+    const after=applyFilters(state.cargos).length;
+    if(before!==after) toastMsg('Yuklar yangilandi');
+  }
+
+  function handleDelta(deletedIds){
+    if(!Array.isArray(deletedIds) || !deletedIds.length) return;
+    const del = new Set(deletedIds);
+    const next = state.cargos.filter(c => !del.has(c.id));
+    setData(next);
+  }
+
+  function connect(){
+    try{
+      conn('warn');
+      const proto=location.protocol==='https:'?'wss':'ws';
+      const url=`${proto}://${location.host}/ws/active_cargos/`;
+      ws=new WebSocket(url);
+
+      ws.onopen=()=>{conn('ok'); if(timer){clearTimeout(timer); timer=null}};
+
+      ws.onclose=()=>{conn('err'); schedule()};
+
+      ws.onerror=()=>{conn('err'); try{ws.close()}catch{}};
+
+      ws.onmessage=(ev)=>{
+        const payload=JSON.parse(ev.data||'{}');
+
+        // Yangi formatlar:
+        if(payload.type === 'snapshot' && Array.isArray(payload.cargos)){
+          return handleSnapshot(payload.cargos);
+        }
+        if(payload.type === 'delta' && Array.isArray(payload.deleted_ids)){
+          return handleDelta(payload.deleted_ids);
+        }
+
+        // Eski formatga moslik: { cargos: [...] }
+        if(Array.isArray(payload.cargos)){
+          return handleSnapshot(payload.cargos);
+        }
+      };
+    }catch(e){conn('err'); schedule()}
+  }
+  function schedule(){ if(timer) return; timer=setTimeout(connect,1600) }
+
+  // Reconciliation polling: WS bo‘lsa ham vaqti-vaqti bilan snapshot olib kelamiz
+  async function pollFallback(){
+    try{
+      const r=await fetch('/api/cargos/active', {cache:'no-store'});
+      if(r.ok){
+        const d=await r.json();
+        if(Array.isArray(d.cargos)) handleSnapshot(d.cargos);
+      }
+    }catch{}
+  }
+  // Muntazam sinxronlash (30s tavsiya, hozir 20s)
+  setInterval(pollFallback, 20000);
+
+  // UI hodisalar
+  $("#q").addEventListener('input',e=>{filters.q=e.target.value.trim(); render(applyFilters(state.cargos),{animate:false})});
+  $("#region").addEventListener('change',e=>{filters.region=e.target.value; render(applyFilters(state.cargos),{animate:false})});
+  $("#sort").addEventListener('change',e=>{filters.sort=e.target.value; render(applyFilters(state.cargos),{animate:false})});
+  $("#reset").addEventListener('click',()=>{
+    filters.q='';filters.region='';filters.sort='new';
+    $("#q").value='';$("#region").value='';$("#sort").value='new';
+    render(applyFilters(state.cargos),{animate:false})
+  });
+
+  // Boshlash
+  connect();
+  // Sahifa birinchi ochilganda ham snapshot olib qo'yamiz (WS ochilishini kutmay)
+  pollFallback();
+</script>
+
+</body>
+</html>
