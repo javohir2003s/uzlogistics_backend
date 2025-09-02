@@ -1,0 +1,45 @@
+# Python
+__pycache__/
+*.py[cod]
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+*.manifest
+*.spec
+
+# Django
+*.log
+*.pot
+*.pyc
+db.sqlite3
+media/
+staticfiles/
+local_settings.py
+
+# Virtual environment
+venv/
+ENV/
+env/
+.venv/
+
+# IDE & Editor
+.idea/
+.vscode/
+*.swp
+*~
+.project
+.pydevproject
+
+# OS specific
+.DS_Store
+Thumbs.db
+
+# Celery
+celerybeat-schedule
+celerybeat.pid
+
+# Migrations (faqat istasangiz — odatda migrations fayllari kerak bo‘ladi!)
+# */migrations/*.py
+# !*/migrations/__init__.py
